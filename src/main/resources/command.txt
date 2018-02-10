@@ -1,0 +1,18 @@
+
+ADD jar Desktop/spark/ip-udf.jar;
+add file Desktop/spark/data.csv;
+CREATE TEMPORARY FUNCTION fromIp AS 'udf.IpUdf';
+
+set mapreduce.map.memory.mb=2000;
+set mapreduce.map.java.opts=-Xmx1500m;
+set mapreduce.reduce.memory.mb=2000;
+set mapreduce.reduce.java.opts=-Xmx1500m;
+
+select res.count, c.countryName from (
+select geoId, sum(productPrice) as count from (
+select fromIp(clientIp) as geoId, productPrice from events2
+) src
+group by geoId
+) res left outer join countries c on (res.geoId = c.id)
+order by res.count DESC
+limit 10;
